@@ -1,6 +1,6 @@
 import scrapy
 from bookscraper.items import BookItem
-
+import random
 
 class BookspiderSpider(scrapy.Spider):
     name = 'bookspider'
@@ -14,7 +14,9 @@ class BookspiderSpider(scrapy.Spider):
     }
 
     def parse(self, response):
+
         books = response.css('article.product_pod')
+
         for book in books:
             relative_url = book.css('h3 a ::attr(href)').get()
 
