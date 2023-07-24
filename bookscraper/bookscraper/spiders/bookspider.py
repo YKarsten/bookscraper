@@ -1,10 +1,21 @@
 import scrapy
 from bookscraper.items import BookItem
 import random
+from urllib.parse import urlencode
+
+
+API_KEY = '0a393154-c06a-413b-868d-c079287b7983'
+
+
+def get_proxy_url(url):
+    payload = {'api_key': API_KEY, 'url': url}
+    proxy_url = 'https://proxy.scrapeops.io/v1/?' + urlencode(payload)
+    return proxy_url
+
 
 class BookspiderSpider(scrapy.Spider):
     name = 'bookspider'
-    allowed_domains = ['books.toscrape.com']
+    allowed_domains = ['books.toscrape.com', 'proxy.scrapeops.io']
     start_urls = ['https://books.toscrape.com/']
 
     custom_settings = {
@@ -12,6 +23,9 @@ class BookspiderSpider(scrapy.Spider):
             'booksdata.json': {'format': 'json', 'overwrite': True},
         }
     }
+
+    def start_requests(self):
+        yield scrapy.Request(url=get_proxy_url(self.start_urls[0]), callback=self.parse)
 
     def parse(self, response):
 
@@ -24,7 +38,7 @@ class BookspiderSpider(scrapy.Spider):
                 book_url = 'https://books.toscrape.com/' + relative_url
             else:
                 book_url = 'https://books.toscrape.com/catalogue/' + relative_url
-            yield response.follow(book_url, callback=self.parse_book_page)
+            yield scrapy.Request(url=get_proxy_url(book_url), callback=self.parse_book_page)
 
         next_page = response.css('li.next a ::attr(href)').get()
         if next_page is not None:
@@ -32,7 +46,7 @@ class BookspiderSpider(scrapy.Spider):
                 next_page_url = 'https://books.toscrape.com/' + next_page
             else:
                 next_page_url = 'https://books.toscrape.com/catalogue/' + next_page
-            yield response.follow(next_page_url, callback=self.parse)
+            yield scrapy.Request(url=get_proxy_url(next_page_url), callback=self.parse)
 
     def parse_book_page(self, response):
 
